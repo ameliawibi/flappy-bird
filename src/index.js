@@ -54,8 +54,13 @@ const initialBirdPosition = { x: config.width / 20, y: config.height / 2 };
 function preload() {
   //debugger;
   this.load.image("sky", "assets/sky.png");
-  this.load.image("bird", "assets/bird.png");
+  //this.load.image("bird", "assets/bird.png");
   this.load.image("pipe", "assets/pipe.png");
+  this.load.spritesheet("bird", "assets/nyancat(w81h38).png", {
+    frameWidth: 81,
+    frameHeight: 38,
+    endFrame: 2,
+  });
 }
 
 function create() {
@@ -63,15 +68,29 @@ function create() {
   //this.add.image(config.width / 2, config.height / 2, "sky");
   this.add.image(0, 0, "sky").setOrigin(0, 0);
 
+  var config2 = {
+    key: "flap",
+    frames: this.anims.generateFrameNumbers("bird", {
+      start: 0,
+      end: 2,
+      first: 0,
+    }),
+    frameRate: 10,
+    repeat: -1,
+  };
+
+  this.anims.create(config2);
   //this.add.sprite(config.width / 2, config.height / 2, "bird").setOrigin(0);
   bird = this.physics.add
     .sprite(initialBirdPosition.x, initialBirdPosition.y, "bird")
-    .setOrigin(0);
+    .setFlipX(false)
+    .setOrigin(0)
+    .play("flap");
+
   bird.setCollideWorldBounds(true);
   bird.body.gravity.y = 200; //200 pixels per second with acceleration
   //bird.body.velocity.x = moveVelocity; //no acceleration
   //console.log(bird.body);
-
   pipes = this.physics.add.group();
 
   for (let i = 0; i < PIPES_TO_RENDER; i++) {
