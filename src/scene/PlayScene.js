@@ -17,7 +17,9 @@ class PlayScene extends Phaser.Scene {
   preload() {
     //debugger;
     this.load.image("sky", "assets/sky.png");
-    this.load.image("pipe", "assets/pipe.png");
+    this.load.audio("nyancat", ["assets/nyancat.ogg", "assets/nyancat.mp3"]);
+    this.load.audio("flap", ["assets/flap.ogg", "assets/flap.mp3"]);
+    this.load.image("pipe", "assets/pinkpipe.png");
     this.load.spritesheet("bird", "assets/nyancat(w81h38).png", {
       frameWidth: 81,
       frameHeight: 38,
@@ -26,8 +28,35 @@ class PlayScene extends Phaser.Scene {
   }
 
   create() {
-    this.add.image(0, 0, "sky").setOrigin(0, 0);
-    var config2 = {
+    this.createBG();
+    this.createBird();
+    this.createPipes();
+    this.createColliders();
+    this.handleInputs();
+  }
+
+  update() {
+    this.checkGameStatus();
+    this.recyclePipes();
+  }
+
+  checkGameStatus() {
+    if (
+      this.bird.y <= 0 ||
+      this.bird.getBounds().bottom >= this.config.height
+    ) {
+      this.gameOver();
+    }
+  }
+
+  createBG() {
+    this.add.image(0, 0, "sky").setOrigin(0, 0).setScale(0.7);
+    this.music = this.sound.add("nyancat");
+    //this.music.play();
+  }
+
+  createBird() {
+    var anim_config = {
       key: "flap",
       frames: this.anims.generateFrameNumbers("bird", {
         start: 0,
@@ -37,38 +66,43 @@ class PlayScene extends Phaser.Scene {
       frameRate: 10,
       repeat: -1,
     };
+    this.flapSound = this.sound.add("flap");
 
-    this.anims.create(config2);
+    this.anims.create(anim_config);
     this.bird = this.physics.add
       .sprite(this.config.startPosition.x, this.config.startPosition.y, "bird")
       .setFlipX(false)
       .setOrigin(0)
       .play("flap");
 
-    this.bird.setCollideWorldBounds(true);
     this.bird.body.gravity.y = 200; //200 pixels per second with acceleration
+    this.bird.setCollideWorldBounds(true);
+  }
 
+  createPipes() {
     this.pipes = this.physics.add.group();
     for (let i = 0; i < PIPES_TO_RENDER; i++) {
-      const upperPipe = this.pipes.create(0, 0, "pipe").setOrigin(0, 1);
-      const lowerPipe = this.pipes.create(0, 0, "pipe").setOrigin(0, 0);
+      const upperPipe = this.pipes
+        .create(0, 0, "pipe")
+        .setImmovable(true)
+        .setFlipY(true)
+        .setOrigin(0, 1);
+      const lowerPipe = this.pipes
+        .create(0, 0, "pipe")
+        .setImmovable(true)
+        .setOrigin(0, 0);
       this.placePipe(upperPipe, lowerPipe);
     }
 
     this.pipes.setVelocityX(this.moveVelocity);
-
-    this.input.on("pointerdown", this.flap, this);
-    this.input.keyboard.on("keydown_SPACE", this.flap, this);
   }
 
-  update() {
-    if (
-      this.bird.y <= 0 ||
-      this.bird.y >= this.config.height - this.bird.height
-    ) {
-      this.restartPosition();
-    }
-    this.recyclePipes();
+  createColliders() {
+    this.physics.add.collider(this.bird, this.pipes, this.gameOver, null, this);
+  }
+  handleInputs() {
+    this.input.on("pointerdown", this.flap, this);
+    this.input.keyboard.on("keydown_P", this.flap, this);
   }
 
   placePipe(uPipe, lPipe) {
@@ -110,13 +144,22 @@ class PlayScene extends Phaser.Scene {
     return rightMostX;
   }
 
-  restartPosition() {
-    this.bird.x = this.config.startPosition.x;
-    this.bird.y = this.config.startPosition.y;
+  gameOver() {
+    this.physics.pause();
+    this.bird.setTint(0xff0000);
+    this.music.pause();
+    this.time.addEvent({
+      delay: 1000,
+      callback: () => {
+        this.scene.restart();
+      },
+      loop: false,
+    });
   }
 
   flap() {
     this.bird.body.velocity.y = -this.flapVelocity;
+    this.flapSound.play();
   }
 }
 
