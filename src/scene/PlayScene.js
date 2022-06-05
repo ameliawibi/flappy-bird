@@ -8,30 +8,23 @@ class PlayScene extends Phaser.Scene {
     this.config = config;
     this.bird = null;
     this.pipes = null;
-    this.flapVelocity = 150;
+    this.flapVelocity = 200;
     this.moveVelocity = -150;
     this.pipeVerticalDistanceRange = [100, 250];
     this.pipeHorizontalDistanceRange = [300, 500];
-  }
 
-  preload() {
-    //debugger;
-    this.load.image("sky", "assets/sky.png");
-    this.load.audio("nyancat", ["assets/nyancat.ogg", "assets/nyancat.mp3"]);
-    this.load.audio("flap", ["assets/flap.ogg", "assets/flap.mp3"]);
-    this.load.image("pipe", "assets/pinkpipe.png");
-    this.load.spritesheet("bird", "assets/nyancat(w81h38).png", {
-      frameWidth: 81,
-      frameHeight: 38,
-      endFrame: 2,
-    });
+    this.score = 0;
+    this.scoreText = "";
   }
 
   create() {
     this.createBG();
+    this.startMusic();
     this.createBird();
     this.createPipes();
     this.createColliders();
+    this.createScore();
+    this.createPause();
     this.handleInputs();
   }
 
@@ -51,10 +44,12 @@ class PlayScene extends Phaser.Scene {
 
   createBG() {
     this.add.image(0, 0, "sky").setOrigin(0, 0).setScale(0.7);
+  }
+
+  startMusic() {
     this.music = this.sound.add("nyancat");
     //this.music.play();
   }
-
   createBird() {
     var anim_config = {
       key: "flap",
@@ -77,7 +72,7 @@ class PlayScene extends Phaser.Scene {
       .setOffset(31, 0)
       .play("flap");
 
-    this.bird.body.gravity.y = 200; //200 pixels per second with acceleration
+    this.bird.body.gravity.y = 400; //400 pixels per second with acceleration
     this.bird.setCollideWorldBounds(true);
   }
 
@@ -102,6 +97,38 @@ class PlayScene extends Phaser.Scene {
   createColliders() {
     this.physics.add.collider(this.bird, this.pipes, this.gameOver, null, this);
   }
+
+  createScore() {
+    this.score = 0;
+    this.scoreText = this.add.text(16, 16, `Score: ${this.score}`, {
+      fontSize: "32px",
+      fill: "#fff",
+    });
+    const bestScore = localStorage.getItem("bestScore");
+    this.bestScoreText = this.add.text(
+      16,
+      52,
+      `Best score: ${bestScore || 0}`,
+      {
+        fontSize: "18px",
+        fill: "#fff",
+      }
+    );
+  }
+
+  createPause() {
+    const pauseButton = this.add
+      .image(this.config.width - 10, this.config.height - 10, "pause")
+      .setOrigin(1)
+      .setScale(0.1)
+      .setInteractive();
+
+    pauseButton.on("pointerdown", () => {
+      this.physics.pause();
+      this.scene.pause();
+    });
+  }
+
   handleInputs() {
     this.input.on("pointerdown", this.flap, this);
     this.input.keyboard.on("keydown_P", this.flap, this);
@@ -133,6 +160,8 @@ class PlayScene extends Phaser.Scene {
         tempPipes.push(pipe);
         if (tempPipes.length === 2) {
           this.placePipe(...tempPipes);
+          this.increaseScore();
+          this.saveBestScore();
         }
       }
     });
@@ -147,6 +176,7 @@ class PlayScene extends Phaser.Scene {
   }
 
   gameOver() {
+    this.saveBestScore();
     this.physics.pause();
     this.bird.setTint(0xff0000);
     this.music.pause();
@@ -162,6 +192,19 @@ class PlayScene extends Phaser.Scene {
   flap() {
     this.bird.body.velocity.y = -this.flapVelocity;
     this.flapSound.play();
+  }
+
+  increaseScore() {
+    this.score += 1;
+    this.scoreText.setText(`Score: ${this.score}`);
+  }
+
+  saveBestScore() {
+    const bestScoreText = localStorage.getItem("bestScore");
+    const bestScore = bestScoreText && parseInt(bestScoreText, 10);
+    if (!bestScore || this.score > bestScore) {
+      localStorage.setItem("bestScore", this.score);
+    }
   }
 }
 
