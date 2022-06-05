@@ -8,6 +8,7 @@ class PlayScene extends BaseScene {
     this.bird = null;
     this.pipes = null;
     this.pauseButton = null;
+    this.isPaused = false;
     this.flapVelocity = 200;
     this.moveVelocity = -150;
     this.pipeVerticalDistanceRange = [100, 250];
@@ -115,6 +116,7 @@ class PlayScene extends BaseScene {
   }
 
   createPause() {
+    this.isPaused = false;
     this.pauseButton = this.add
       .image(this.config.width - 10, this.config.height - 10, "pause")
       .setOrigin(1)
@@ -122,6 +124,7 @@ class PlayScene extends BaseScene {
       .setInteractive();
 
     this.pauseButton.on("pointerdown", () => {
+      this.isPaused = true;
       this.physics.pause();
       this.scene.pause();
       this.scene.launch("PauseScene");
@@ -166,6 +169,7 @@ class PlayScene extends BaseScene {
       this.countDownText.setText("");
       this.timedEvent.remove();
       this.physics.resume();
+      this.isPaused = false;
       this.createPause();
     }
   }
@@ -226,6 +230,9 @@ class PlayScene extends BaseScene {
   }
 
   flap() {
+    if (this.isPaused) {
+      return;
+    }
     this.bird.body.velocity.y = -this.flapVelocity;
     this.flapSound.play();
   }
