@@ -73,6 +73,8 @@ class PlayScene extends Phaser.Scene {
       .sprite(this.config.startPosition.x, this.config.startPosition.y, "bird")
       .setFlipX(false)
       .setOrigin(0)
+      .setBodySize(50, 38)
+      .setOffset(31, 0)
       .play("flap");
 
     this.bird.body.gravity.y = 200; //200 pixels per second with acceleration
