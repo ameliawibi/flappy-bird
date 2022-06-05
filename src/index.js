@@ -2,6 +2,8 @@ import Phaser from "phaser";
 import PreloadScene from "./scene/PreloadScene";
 import PlayScene from "./scene/PlayScene";
 import MenuScene from "./scene/MenuScene";
+import ScoreScene from "./scene/ScoreScene";
+import PauseScene from "./scene/PauseScene";
 /*const axios = require("axios");
 
 axios
@@ -29,7 +31,7 @@ const SHARED_CONFIG = {
   parent: "canvas",
 };
 
-const Scenes = [PreloadScene, MenuScene, PlayScene];
+const Scenes = [PreloadScene, MenuScene, ScoreScene, PlayScene, PauseScene];
 const createScene = (Scene) => new Scene(SHARED_CONFIG);
 const initScenes = () => Scenes.map(createScene);
 

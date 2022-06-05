@@ -1,13 +1,13 @@
-import Phaser from "phaser";
+import BaseScene from "./BaseScene";
 
 const PIPES_TO_RENDER = 4;
 
-class PlayScene extends Phaser.Scene {
+class PlayScene extends BaseScene {
   constructor(config) {
-    super("PlayScene");
-    this.config = config;
+    super("PlayScene", config);
     this.bird = null;
     this.pipes = null;
+    this.pauseButton = null;
     this.flapVelocity = 200;
     this.moveVelocity = -150;
     this.pipeVerticalDistanceRange = [100, 250];
@@ -18,7 +18,7 @@ class PlayScene extends Phaser.Scene {
   }
 
   create() {
-    this.createBG();
+    super.create();
     this.startMusic();
     this.createBird();
     this.createPipes();
@@ -26,6 +26,7 @@ class PlayScene extends Phaser.Scene {
     this.createScore();
     this.createPause();
     this.handleInputs();
+    this.listenToEvents();
   }
 
   update() {
@@ -42,14 +43,11 @@ class PlayScene extends Phaser.Scene {
     }
   }
 
-  createBG() {
-    this.add.image(0, 0, "sky").setOrigin(0, 0).setScale(0.7);
-  }
-
   startMusic() {
     this.music = this.sound.add("nyancat");
     //this.music.play();
   }
+
   createBird() {
     var anim_config = {
       key: "flap",
@@ -117,21 +115,59 @@ class PlayScene extends Phaser.Scene {
   }
 
   createPause() {
-    const pauseButton = this.add
+    this.pauseButton = this.add
       .image(this.config.width - 10, this.config.height - 10, "pause")
       .setOrigin(1)
       .setScale(0.1)
       .setInteractive();
 
-    pauseButton.on("pointerdown", () => {
+    this.pauseButton.on("pointerdown", () => {
       this.physics.pause();
       this.scene.pause();
+      this.scene.launch("PauseScene");
     });
   }
 
   handleInputs() {
     this.input.on("pointerdown", this.flap, this);
     this.input.keyboard.on("keydown_P", this.flap, this);
+  }
+
+  listenToEvents() {
+    if (this.pauseEvent) {
+      return;
+    }
+
+    this.pauseEvent = this.events.on("resume", () => {
+      this.pauseButton.destroy();
+      this.initialTime = 3;
+      this.countDownText = this.add
+        .text(
+          ...this.screenCenter,
+          `Fly in: ${this.initialTime}`,
+          this.fontOptions
+        )
+        .setOrigin(0.5);
+      this.timedEvent = this.time.addEvent({
+        delay: 1000,
+        callback: () => {
+          this.countDown();
+        },
+        callbackScope: this,
+        loop: true,
+      });
+    });
+  }
+
+  countDown() {
+    this.initialTime--;
+    this.countDownText.setText(`Fly in: ${this.initialTime}`);
+    if (this.initialTime <= 0) {
+      this.countDownText.setText("");
+      this.timedEvent.remove();
+      this.physics.resume();
+      this.createPause();
+    }
   }
 
   placePipe(uPipe, lPipe) {
